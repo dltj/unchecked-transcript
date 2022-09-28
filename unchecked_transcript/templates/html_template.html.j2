@@ -1,0 +1,69 @@
+<!doctype html>
+<html lang="en">
+
+<head>
+  <meta http-equiv="Content-Security-Policy" content="script-src 'self' hypothes.is cdn.hypothes.is;">
+  <meta charset="UTF-8" />
+  <title>"{{episode_title}}" uncorrected transcript ({{podcast_title}}) | DLTJ</title>
+  <meta name="robots" content="noindex">
+  <meta name="AdsBot-Google" content="noindex">
+  <script src="https://hypothes.is/embed.js" async></script>
+  <style type="text/css">
+    div.transcript div:nth-child(odd) {
+      background: #edecec;
+    }
+
+    p {
+      margin-left: 5em;
+      margin-right: 8em;
+    }
+
+    div.transcript div {
+      padding-left: 6.5em;
+      text-indent: -2.6em;
+      margin-right: 3em;
+      padding-top: 3px;
+      margin-bottom: 3px;
+    }
+
+    div.transcript div:before {
+      width: 2em;
+      display: inline-block;
+      border-right: 1px solid black;
+      margin-right: 0.5em;
+    }
+
+    div.transcript div.line0 {
+      font-weight: bold;
+    }
+
+    div.transcript div.line0:before {
+      content: "Timestamp";
+      font-weight: bold;
+      letter-spacing: -1px;
+    }
+
+    {% for item in timed_text %}div.transcript div.line{{ loop.index }}:before {content: "{{ item.start_time }}";}
+    {% endfor %}
+  </style>
+</head>
+
+<body>
+  <h1>Uncorrected Transcript: "{{episode_title}}" from <em>{{podcast_title}}</em></h1>
+
+  <p>This is an uncorrected transcript of the "<a href="{{episode_url}}">{{episode_title}}</a>" podcast from {{podcast_title}}. It was automatically generated using <a href="https://aws.amazon.com/transcribe/">Amazon Transcribe</a> from AWS. It has <em>not</em> been proofread and likely contains errors of significance.</p>
+
+  <p>The <a href="https://web.hypothes.is/">Hypothesis annotation tool</a> is embedded in this page, which allows you to see annotations to sections of the document. You are invited to <a href="https://web.hypothes.is/start/">create your own Hypothesis account</a> to add annotations here. (Note that there is no guarantee that this document will persist, although efforts will be made as it is the anchor to my own Hypothesis annotations.)</p>
+
+  <p>This page should not be indexed by search engine crawlers (it has the "robots" meta with <a href="https://developers.google.com/search/docs/crawling-indexing/robots-meta-tag#noindex">noindex</a> in the header).  For more information about how this was generated (and why), see the DLTJ article <em><a href="https://dltj.org/article/generating-podcast-transcripts">Automatically Generating Podcast Transcripts</a></em>.</p>
+
+  <div class="transcript">
+    <div class="line0">Uncorrected Transcript</div>
+
+    {% for item in timed_text %}
+    <div class="line{{ loop.index }}">{{ item.sentence }}</div>
+    {% endfor %}
+  </div>
+</body>
+
+</html>
