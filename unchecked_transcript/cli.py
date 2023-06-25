@@ -10,8 +10,8 @@ import click
 from omegaconf import OmegaConf
 
 from . import aws_session, config
-from .create_html import create_html
-from .create_transcript import create_transcript
+from .podcast_html import podcast_html
+from .podcast_transcript import podcast_transcript
 from .upload_html import upload_html
 
 log = logging.getLogger()
@@ -22,7 +22,7 @@ log = logging.getLogger()
 @click.argument("episode_title", type=str)
 @click.argument("episode_url", type=str)
 @click.argument("podcast_title", type=str)
-def cli(
+def podcast(
     audio_url: str,
     episode_title: str,
     episode_url: str,
@@ -50,10 +50,10 @@ def cli(
 
     folder = f"{config.base_folder}/{episode_key}/"
 
-    vtt_uri = create_transcript(audio_url, folder, episode_key)
+    vtt_uri = podcast_transcript(audio_url, folder, episode_key)
     click.echo(vtt_uri)
 
-    html_string = create_html(vtt_uri, episode_metadata)
+    html_string = podcast_html(vtt_uri, episode_metadata)
     upload_html(html_string=html_string, folder=folder)
 
     s3 = aws_session.resource("s3")

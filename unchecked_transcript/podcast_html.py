@@ -6,7 +6,7 @@ import webvtt
 from jinja2 import Environment, PackageLoader, select_autoescape
 
 
-def create_html(vtt_file: str, episode_metadata: dict) -> str:
+def podcast_html(vtt_file: str, episode_metadata: dict) -> str:
     # Get the WebVTT file
     r = requests.get(vtt_file)
     r.raise_for_status()

@@ -10,7 +10,7 @@ from . import aws_session, config
 log = logging.getLogger()
 
 
-def create_transcript(
+def podcast_transcript(
     audio_file_url: str,
     folder: str,
     episode_key: str,
