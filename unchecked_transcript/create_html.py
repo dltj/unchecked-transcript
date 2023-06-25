@@ -56,5 +56,5 @@ def create_html(vtt_file: str, episode_metadata: dict) -> str:
         autoescape=select_autoescape(),
     )
     placeholders = {**episode_metadata, "timed_text": timed_text}
-    template = env.get_template("html_template.html.j2")
+    template = env.get_template("podcast_template.html.j2")
     return template.render(placeholders)
