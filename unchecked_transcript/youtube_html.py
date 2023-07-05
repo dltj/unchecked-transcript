@@ -30,7 +30,7 @@ def extract_video_id(url: str) -> str:
         )
 
 
-def youtube_html(episode_metadata: dict, lang: str) -> str:
+def youtube_html(episode_metadata: dict, lang: str, fromlang: str) -> str:
 
     condensed_transcript = []
 
@@ -55,11 +55,16 @@ def youtube_html(episode_metadata: dict, lang: str) -> str:
             lang_list.insert(0, "en")
 
     try:
-        transcript = YouTubeTranscriptApi.get_transcript(
-            video_id, languages=lang_list
-        )
+        if fromlang:
+            transcript_list = YouTubeTranscriptApi.list_transcripts(video_id)
+            native_transcript = transcript_list.find_transcript([fromlang])
+            transcript = native_transcript.translate(lang_list[0]).fetch()
+        else:
+            transcript = YouTubeTranscriptApi.get_transcript(
+                video_id, languages=lang_list
+            )
     except Exception as e:
-        raise ValueError(f"Video not found: {e}") from e
+        raise ValueError(f"Transcript problem: {e}") from e
 
     condensed_entry = None
     start_times = []

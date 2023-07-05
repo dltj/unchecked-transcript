@@ -87,11 +87,17 @@ def podcast(
     default="en_US,en",
     help="One or more langagues, comma-separated",
 )
+@click.option(
+    "-f",
+    "--fromlang",
+    help="Translate from this language",
+)
 def youtubevideo(
     youtube_url: str,
     video_title: str,
     video_creator: str,
     lang: str,
+    fromlang: str,
 ):
     episode_metadata = {
         "youtube_url": youtube_url,
@@ -105,12 +111,12 @@ def youtubevideo(
     episode_metadata["episode_key"] = episode_key
 
     folder = f"{config.youtube_base_folder}/{episode_key}/"
-    html_string = youtube_html(episode_metadata, lang)
+    html_string = youtube_html(episode_metadata, lang, fromlang)
     upload_html(html_string=html_string, folder=folder)
 
     upload_metadata(episode_metadata, folder)
     click.echo(f"https://{config.bucket}/{folder}index.html")
 
 
-# if __name__ == "__main__":
-#     cli(argv[1], argv[2])  # pylint: disable=no-value-for-parameter
+if __name__ == "__main__":
+    youtubevideo()  # pylint: disable=no-value-for-parameter

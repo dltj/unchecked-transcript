@@ -4,9 +4,11 @@
 
 poetry run transcript <AUDIO_URL> <EPISODE_TITLE> <EPISODE_URL> <PODCAST_TITLE>
 
-poetry run youtube <YOUTUBE_URL> <VIDEO_TITLE> <VIDEO_CREATOR>
+poetry run youtube [--lang <languages>] [--fromlang <baselanguage>] <YOUTUBE_URL> <VIDEO_TITLE> <VIDEO_CREATOR>
 
-Be sure to quote each command line parameter if they have shell glob characters (e.g. '?' or '[')
+Be sure to quote each command line parameter if they have shell glob characters (e.g. '?' or '[').
+YouTube transcripts can be translated from a base language if the desired language is not available and YouTube supplies automated translations.
+Use the `--fromlang` parameter to specify the base language and the `--lang` parameter to specify the desired language.
 
 ## Configuration
 Create a `config.yml` file with these lines
