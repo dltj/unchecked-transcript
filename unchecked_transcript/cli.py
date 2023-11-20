@@ -4,6 +4,7 @@
 
 import json
 import logging
+import re
 from datetime import datetime
 
 import click
@@ -66,6 +67,7 @@ def podcast(
     episode_metadata["episode_key"] = episode_key
 
     folder = f"{config.podcast_base_folder}/{episode_key}/"
+    folder = re.sub(r"[^a-zA-Z0-9-_.!*()/]", "", folder)[:1023]
 
     vtt_uri = podcast_transcript(audio_url, folder, episode_key)
     click.echo(vtt_uri)

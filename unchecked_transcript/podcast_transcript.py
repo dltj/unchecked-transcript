@@ -1,5 +1,6 @@
 import json
 import logging
+import re
 import tempfile
 import time
 
@@ -32,7 +33,7 @@ def podcast_transcript(
     log.debug("Put file to S3")
 
     transcriber = aws_session.client("transcribe")
-    job = f"podcast-{episode_key}"[:200]
+    job = re.sub("[^0-9a-zA-Z._-]", "", f"podcast-{episode_key}")[:200]
     media_uri = f"s3://{config.bucket}/{folder}audio.mp3"
     r = transcriber.start_transcription_job(
         TranscriptionJobName=job,
