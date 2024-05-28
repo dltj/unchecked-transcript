@@ -16,6 +16,7 @@ spacy = "^3.4.1"
 Jinja2 = "^3.1.2"
 omegaconf = "^2.2.3"
 youtube-transcript-api = "^0.6.1"
+pytube = "^15.0.0"
 
 [tool.poetry.dependencies.en_core_web_lg]
 url = "https://github.com/explosion/spacy-models/releases/download/en_core_web_lg-3.4.0/en_core_web_lg-3.4.0.tar.gz"

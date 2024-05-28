@@ -6,17 +6,50 @@ import json
 import logging
 import re
 from datetime import datetime
+from typing import Callable
 
 import click
 from omegaconf import OmegaConf
 
 from unchecked_transcript import aws_session, config
+from unchecked_transcript.mediacontent import YouTubeVideo
 from unchecked_transcript.podcast_html import podcast_html
 from unchecked_transcript.podcast_transcript import podcast_transcript
+from unchecked_transcript.transcription import Transcription
 from unchecked_transcript.upload_html import upload_html
-from unchecked_transcript.youtube_html import extract_video_id, youtube_html
 
 log = logging.getLogger()
+
+
+# Common options decorator
+def common_options(func: Callable) -> Callable:
+    """Decorator to add common options to Click commands."""
+
+    @click.option("--verbose", is_flag=True, help="Enables verbose mode.")
+    @click.option("--debug", is_flag=True, help="Enables debug mode.")
+    def wrapper(*args, verbose: bool, debug: bool, **kwargs):
+        # Configure logging level based on the options
+        if debug:
+            logging.basicConfig(level=logging.DEBUG)
+        elif verbose:
+            logging.basicConfig(level=logging.INFO)
+        else:
+            logging.basicConfig(level=logging.WARNING)
+        logging.getLogger("botocore").setLevel(logging.WARNING)
+        logging.getLogger("boto3").setLevel(logging.WARNING)
+        logging.getLogger("pytube").setLevel(logging.WARNING)
+
+        return func(*args, **kwargs)
+
+    return wrapper
+
+
+@click.group()
+def cli_group():
+    """Main CLI group"""
+
+
+# END OF Common options decorator
 
 
 def get_episode_key(episode_key: str) -> str:
@@ -79,45 +112,44 @@ def podcast(
     click.echo(f"https://{config.bucket}/{folder}index.html")
 
 
-@click.command()
-@click.argument("youtube_url", type=str)
-@click.argument("video_title", type=str)
-@click.argument("video_creator", type=str)
+@cli_group.command()
+@click.argument("url", type=str)
 @click.option(
-    "-l",
-    "--lang",
-    default="en_US,en",
-    help="One or more langagues, comma-separated",
+    "-t",
+    "--title",
+    help="Override the video title supplied by YouTube",
+    type=str,
 )
 @click.option(
-    "-f",
-    "--fromlang",
-    help="Translate from this language",
+    "-c",
+    "--channel",
+    help="Override the video channel supplied by YouTube",
+    type=str,
 )
+@click.option(
+    "--stdout",
+    is_flag=True,
+    default=False,
+    help="If set, output will be printed to stdout instead of uploading to S3.",
+)
+@common_options
 def youtubevideo(
-    youtube_url: str,
-    video_title: str,
-    video_creator: str,
-    lang: str,
-    fromlang: str,
+    url: str,
+    title: str,
+    channel: str,
+    stdout: bool,
 ):
-    episode_metadata = {
-        "youtube_url": youtube_url,
-        "video_title": video_title,
-        "video_creator": video_creator,
-    }
+    """Create an HTML transcript page for a YouTube video."""
     OmegaConf.set_readonly(config, True)
 
-    youtube_video_id = extract_video_id(youtube_url)
-    episode_key = get_episode_key(f"{youtube_video_id}-{video_title}")
-    episode_metadata["episode_key"] = episode_key
-
-    folder = f"{config.youtube_base_folder}/{episode_key}/"
-    html_string = youtube_html(episode_metadata, lang, fromlang)
-    upload_html(html_string=html_string, folder=folder)
-
-    upload_metadata(episode_metadata, folder)
-    click.echo(f"https://{config.bucket}/{folder}index.html")
+    yt = YouTubeVideo(source_url=url, title=title, creator=channel)
+    transcription = Transcription(yt)
+    transcription_html = transcription.html()
+    if stdout:
+        print(transcription_html)
+    else:
+        url = upload_html(html_string=transcription_html, folder=yt.s3_path)
+        click.echo(f"Transcript file uploaded to {url}")
 
 
 if __name__ == "__main__":
