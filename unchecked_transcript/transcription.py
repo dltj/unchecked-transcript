@@ -76,7 +76,7 @@ class Transcription:
             except ValueError:
                 continue
 
-            text = text.replace("\n", " ")
+            text = text.replace("\n", " ").lstrip()
 
             if condensed_entry is None:
                 condensed_entry = {
@@ -115,7 +115,7 @@ class Transcription:
             loader=jinja2.PackageLoader("unchecked_transcript"),
             autoescape=jinja2.select_autoescape(),
         )
-        template = jinja_env.get_template("youtube_template.html.j2")
+        template = jinja_env.get_template(self._media_content.html_template)
 
         media_metadata = self._media_content.media_metadata
         condensed_transcript, start_times = self.condense_segments()

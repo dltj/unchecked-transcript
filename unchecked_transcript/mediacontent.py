@@ -1,5 +1,6 @@
 """A piece of media with an audio track"""
 
+import os
 import re
 from abc import ABC, abstractmethod
 from datetime import datetime
@@ -7,6 +8,7 @@ from typing import Dict, List
 
 import pytube
 import pytube.streams
+import requests
 
 from .util import extract_video_id, get_temp_dir, remove_stop_words
 
@@ -87,6 +89,15 @@ class MediaContent(ABC):
         """
 
     @property
+    @abstractmethod
+    def html_template(self) -> str:
+        """Get the filename of the template to use
+
+        :return: the template filename
+        :rtype: str
+        """
+
+    @property
     def s3_path(self) -> str:
         """Get the s3 path to store the HTML file
 
@@ -115,6 +126,73 @@ class MediaContent(ABC):
             slug_elements.extend(remove_stop_words(title_words))
             _slug = "-".join(slug_elements)
         return _slug
+
+
+class PodcastEpisode(MediaContent):
+    """A podcast episode"""
+
+    _title: str = None
+    _creator: str = None
+    _episode_url: str = None
+    _audio_file: str = None
+
+    def __init__(
+        self,
+        audio_url: str,
+        episode_title: str,
+        episode_url: str,
+        podcast_title: str,
+    ) -> None:  # noqa: N801
+        super().__init__(source_url=audio_url)
+        self._title = episode_title
+        self._creator = podcast_title
+        self._episode_url = episode_url
+
+    @property
+    def title(self) -> str:
+        return self._title
+
+    @property
+    def creator(self) -> str:
+        return self._creator
+
+    @property
+    def audio_url(self):
+        return self.source_url
+
+    @property
+    def audio_file(self) -> str:
+        if self._audio_file is None:
+            self._audio_file = os.path.join(get_temp_dir(), "audio.mp3")
+            response = requests.get(self.audio_url, stream=True, timeout=10)
+            response.raise_for_status()
+            with open(self._audio_file, "wb") as file:
+                for chunk in response.iter_content(chunk_size=8192):
+                    file.write(chunk)
+        return self._audio_file
+
+    @property
+    def media_key(self) -> str:
+        creator_cleaned = re.sub(r"[^\w\s]", "", self.creator)
+        creator_words = creator_cleaned.lower().split()
+        return "-".join(remove_stop_words(creator_words)) + "-"
+
+    @property
+    def media_metadata(self) -> List[Dict[str, str]]:
+        metadata = {
+            "episode_title": self._title,
+            "podcast_title": self._creator,
+            "episode_url": self._episode_url,
+        }
+        return metadata
+
+    @property
+    def s3_folder(self) -> str:
+        return "unchecked-transcript"
+
+    @property
+    def html_template(self) -> str:
+        return "podcast_template.html.j2"
 
 
 class YouTubeVideo(MediaContent):
@@ -168,6 +246,10 @@ class YouTubeVideo(MediaContent):
         return "annotated-video"
 
     @property
+    def html_template(self) -> str:
+        return "youtube_template.html.j2"
+
+    @property
     def media_metadata(self) -> List[Dict[str, str]]:
         iframe_source = f"https://www.youtube.com/embed/{self.youtube_id}"
         iframe_source += "?enablejsapi=1&widgetid=1&start=0&name=me"
@@ -186,31 +268,3 @@ class YouTubeVideo(MediaContent):
                 mime_type="audio/mp4"
             ).first()
         return self._audio_stream
-
-
-class PodcastEpisode(MediaContent):
-    """A PodcastEpisode audio file"""
-
-    _title: str = None
-    _creator: str = None
-
-    def __init__(self, source_url: str, title: str, creator: str) -> None:
-        super().__init__(source_url=source_url)
-        self._title = title
-        self._creator = creator
-
-    @property
-    def title(self) -> str:
-        return self._title
-
-    @property
-    def creator(self) -> str:
-        return self._creator
-
-    @property
-    def audio_url(self):
-        return self.source_url
-
-    @property
-    def s3_folder(self) -> str:
-        return "unchecked-transcript"
