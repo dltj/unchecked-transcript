@@ -62,6 +62,24 @@ class MediaContent(ABC):
 
     @property
     @abstractmethod
+    def text(self) -> list:
+        """Get any predefined text
+
+        Returns:
+            list: long string
+        """
+
+    @property
+    @abstractmethod
+    def segments(self) -> list:
+        """Get any predefined captions
+
+        Returns:
+            list: caption list
+        """
+
+    @property
+    @abstractmethod
     def media_key(self) -> str:
         """Get the unique identifier for the media content
 
@@ -171,6 +189,14 @@ class PodcastEpisode(MediaContent):
         return self._audio_file
 
     @property
+    def text(self):
+        return None
+
+    @property
+    def segments(self) -> list:
+        return None
+
+    @property
     def media_key(self) -> str:
         creator_cleaned = re.sub(r"[^\w\s]", "", self.creator)
         creator_words = creator_cleaned.lower().split()
@@ -213,6 +239,88 @@ class YouTubeVideo(MediaContent):
         self._title = title
         self._creator = creator
 
+    @staticmethod
+    def _convert_to_seconds(time_str):
+        """
+        Converts a time string from SRT format (hh:mm:ss,ms) to seconds.
+
+        This function parses a time string from the SRT format, splitting into
+        hours, minutes, seconds, and milliseconds, and converts it into a floating
+        point number representing the equivalent time in seconds.
+
+        Args:
+            time_str (str): Time string in the format "hh:mm:ss,ms".
+
+        Returns:
+            float: The time in seconds.
+
+        Example:
+            seconds = convert_to_seconds("00:00:10,160")
+            # Output: 10.16
+        """
+        hours, minutes, seconds_ms = time_str.split(":")
+        seconds, milliseconds = seconds_ms.split(",")
+        return (
+            int(hours) * 3600
+            + int(minutes) * 60
+            + int(seconds)
+            + int(milliseconds) / 1000.0
+        )
+
+    def _parse_srt(self):
+        """
+        Parses SRT (SubRip Subtitle) contents into a list of subtitle entries.
+
+        Each entry in the returned list is a dictionary containing the start time,
+        end time, and text of the subtitle. The times are converted to seconds with
+        milliseconds.
+
+        Args:
+            srt_content (str): The content of the SRT file as a string.
+
+        Returns:
+            list: A list of dictionaries, each with 'start' (float), 'end' (float),
+                and 'text' (str) keys representing the timecoded subtitle entries.
+
+        Example:
+            srt_content = \"\"\"
+            1
+            00:00:10,160 --> 00:00:19,360
+            Example subtitle text.
+
+            2
+            00:00:19,360 --> 00:00:26,480
+            Another subtitle entry.
+            \"\"\"
+            result = parse_srt(srt_content)
+            # Output: [{'start': 10.16, 'end': 19.36, 'text': 'Example subtitle text.'}, ...]
+
+        """
+        subtitles = []
+        srt_content = self.pytube_object.captions["en"].generate_srt_captions()
+        blocks = srt_content.strip().split(
+            "\n\n"
+        )  # Split the input into blocks
+
+        for block in blocks:
+            lines = block.split("\n")
+            if len(lines) >= 3:
+                _, timecode, *text = lines
+                start_str, end_str = map(str.strip, timecode.split("-->"))
+
+                start_seconds = self._convert_to_seconds(start_str)
+                end_seconds = self._convert_to_seconds(end_str)
+                text_content = " ".join(text).strip()
+
+                subtitle = {
+                    "start": start_seconds,
+                    "end": end_seconds,
+                    "text": text_content,
+                }
+                subtitles.append(subtitle)
+
+        return subtitles
+
     @property
     def media_key(self) -> str:
         return self.youtube_id
@@ -239,6 +347,20 @@ class YouTubeVideo(MediaContent):
             audio_stream = self._get_audio_stream()
             self._audio_file = audio_stream.download(get_temp_dir())
         return self._audio_file
+
+    @property
+    def text(self):
+        if "en" in self.pytube_object.captions:
+            srt_captions = self._parse_srt()
+            only_text = "\n".join([x.text for x in srt_captions])
+            return only_text
+        return None
+
+    @property
+    def segments(self) -> list:
+        if "en" in self.pytube_object.captions:
+            return self._parse_srt()
+        return None
 
     @property
     def s3_folder(self) -> str:

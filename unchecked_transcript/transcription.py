@@ -1,5 +1,6 @@
 """A Transcription"""
 
+import logging
 import time
 from typing import Dict, List, Tuple, Union
 
@@ -9,6 +10,8 @@ import whisper
 from unchecked_transcript.mediacontent import MediaContent
 
 TranscriptEntry = Dict[str, Union[float, str]]
+
+log = logging.getLogger()
 
 
 class Transcription:
@@ -35,6 +38,9 @@ class Transcription:
         :return: plaintext transcript
         :rtype: str
         """
+        if self._media_content.text:
+            logging.debug("Using MediaContent-supplied text")
+            return self._media_content.text
         return self._whisper_results()["text"]
 
     @property
@@ -52,6 +58,9 @@ class Transcription:
         :return: transcript elements
         :rtype: list
         """
+        if self._media_content.segments:
+            logging.debug("Using MediaContent-supplied caption segments")
+            return self._media_content.segments
         return self._whisper_results()["segments"]
 
     def condense_segments(
@@ -68,7 +77,8 @@ class Transcription:
         start_times: List[float] = []
         condensed_entry: TranscriptEntry = None
 
-        for entry in self.segments:
+        video_segments = self.segments
+        for entry in video_segments:
             try:
                 start = float(entry.get("start"))
                 duration = float(entry.get("end") - start)
@@ -96,7 +106,7 @@ class Transcription:
             # this is the last segment of the transcript, append the condensed entry to the list.
             if (
                 condensed_entry.get("duration", 0) >= min_length
-                or entry == self.segments[-1]
+                or entry == video_segments[-1]
             ):
                 condensed_start = condensed_entry.get("start", 0)
                 start_times.append(condensed_start)
