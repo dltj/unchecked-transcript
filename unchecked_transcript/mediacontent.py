@@ -6,8 +6,7 @@ from abc import ABC, abstractmethod
 from datetime import datetime
 from typing import Dict, List
 
-import pytube
-import pytube.streams
+import pytubefix
 import requests
 
 from .util import extract_video_id, get_temp_dir, remove_stop_words
@@ -124,8 +123,8 @@ class MediaContent(ABC):
             title_cleaned = re.sub(r"[^\w\s]", "", self.title)
             title_words = title_cleaned.lower().split()
             slug_elements.extend(remove_stop_words(title_words))
-            _slug = "-".join(slug_elements)
-        return _slug
+            self._slug = "-".join(slug_elements)
+        return self._slug
 
 
 class PodcastEpisode(MediaContent):
@@ -201,8 +200,8 @@ class YouTubeVideo(MediaContent):
     _title: str = None
     _creator: str = None
     youtube_id: str
-    pytube_object: pytube.YouTube
-    _audio_stream: pytube.streams.Stream = None
+    pytube_object: pytubefix.YouTube
+    _audio_stream: pytubefix.streams.Stream = None
     _audio_file: str = None
 
     def __init__(
@@ -210,7 +209,7 @@ class YouTubeVideo(MediaContent):
     ) -> None:
         super().__init__(source_url=source_url)
         self.youtube_id = extract_video_id(self.source_url)
-        self.pytube_object = pytube.YouTube(source_url)
+        self.pytube_object = pytubefix.YouTube(source_url)
         self._title = title
         self._creator = creator
 
@@ -262,7 +261,7 @@ class YouTubeVideo(MediaContent):
         }
         return metadata
 
-    def _get_audio_stream(self) -> pytube.streams.Stream:
+    def _get_audio_stream(self) -> pytubefix.streams.Stream:
         if self._audio_stream is None:
             self._audio_stream = self.pytube_object.streams.filter(
                 mime_type="audio/mp4"
