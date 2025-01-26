@@ -1,15 +1,40 @@
 """A piece of media with an audio track"""
 
+import json
+import logging
 import os
 import re
+import subprocess
+import sys
 from abc import ABC, abstractmethod
 from datetime import datetime
-from typing import Dict, List
+from typing import Dict, List, Tuple
 
 import pytubefix
 import requests
 
 from .util import extract_video_id, get_temp_dir, remove_stop_words
+
+log = logging.getLogger()
+
+
+def _generate_youtube_tokens() -> Tuple[str, str]:
+    command = "node scripts/youtube-token-generator.js"
+    try:
+        shell_result = subprocess.run(
+            command,
+            check=True,
+            shell=True,
+            capture_output=True,
+            text=True,
+        )
+    except subprocess.CalledProcessError as error:
+        log.critical(f"{command} STDOUT: {error.stdout}\n")
+        log.critical(f"{command} STDERR: {error.stderr}\n")
+        sys.exit(1)
+    token_object = json.loads(shell_result.stdout)
+    log.debug(f"Result: {token_object=}")
+    return token_object["visitorData"], token_object["poToken"]
 
 
 class MediaContent(ABC):
@@ -235,7 +260,12 @@ class YouTubeVideo(MediaContent):
     ) -> None:
         super().__init__(source_url=source_url)
         self.youtube_id = extract_video_id(self.source_url)
-        self.pytube_object = pytubefix.YouTube(source_url)
+        self.pytube_object = pytubefix.YouTube(
+            source_url,
+            client="WEB",
+            use_po_token=True,
+            po_token_verifier=_generate_youtube_tokens,
+        )
         self._title = title
         self._creator = creator
 
@@ -267,7 +297,7 @@ class YouTubeVideo(MediaContent):
             + int(milliseconds) / 1000.0
         )
 
-    def _parse_srt(self):
+    def _parse_srt(self, lang="en"):
         """
         Parses SRT (SubRip Subtitle) contents into a list of subtitle entries.
 
@@ -297,7 +327,7 @@ class YouTubeVideo(MediaContent):
 
         """
         subtitles = []
-        srt_content = self.pytube_object.captions["en"].generate_srt_captions()
+        srt_content = self.pytube_object.captions[lang].generate_srt_captions()
         blocks = srt_content.strip().split(
             "\n\n"
         )  # Split the input into blocks
@@ -350,16 +380,17 @@ class YouTubeVideo(MediaContent):
 
     @property
     def text(self):
-        if "en" in self.pytube_object.captions:
-            srt_captions = self._parse_srt()
-            only_text = "\n".join([x.text for x in srt_captions])
+        if self.segments:
+            only_text = "\n".join([x.text for x in self.segments])
             return only_text
         return None
 
     @property
     def segments(self) -> list:
         if "en" in self.pytube_object.captions:
-            return self._parse_srt()
+            return self._parse_srt("en")
+        if "en-US" in self.pytube_object.captions:
+            return self._parse_srt("en-US")
         return None
 
     @property

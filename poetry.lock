@@ -448,7 +448,7 @@ six = ">=1.5"
 
 [[package]]
 name = "pytubefix"
-version = "8.7.0"
+version = "8.12.0"
 description = "Python3 library for downloading YouTube Videos."
 category = "main"
 optional = false
@@ -1153,8 +1153,8 @@ python-dateutil = [
     {file = "python_dateutil-2.8.2-py2.py3-none-any.whl", hash = "sha256:961d03dc3453ebbc59dbdea9e4e11c5651520a876d0f4db161e8674aae935da9"},
 ]
 pytubefix = [
-    {file = "pytubefix-8.7.0-py3-none-any.whl", hash = "sha256:46b5d2da614b5ce694ef8a90ecdacf8a72c76c18b83772997f1de8c0f7d87ef9"},
-    {file = "pytubefix-8.7.0.tar.gz", hash = "sha256:0881042f065c6dac99c2785785061f37e37424d682cc5d570dba3d53c7f45ef7"},
+    {file = "pytubefix-8.12.0-py3-none-any.whl", hash = "sha256:560b0f17b5a5b86fa9a542b02049eaa06492f2f6f66b787244333673387343eb"},
+    {file = "pytubefix-8.12.0.tar.gz", hash = "sha256:8a2b51a06efbec926ad88d2d686b6a66c7da37edf406eab7347d4ee43b638a4b"},
 ]
 PyYAML = [
     {file = "PyYAML-6.0-cp310-cp310-macosx_10_9_x86_64.whl", hash = "sha256:d4db7c7aef085872ef65a8fd7d6d09a14ae91f691dec3e87ee5ee0539d516f53"},
