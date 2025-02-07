@@ -39,6 +39,7 @@ def common_options(func: Callable) -> Callable:
         logging.getLogger("botocore").setLevel(logging.WARNING)
         logging.getLogger("boto3").setLevel(logging.WARNING)
         logging.getLogger("pytube").setLevel(logging.WARNING)
+        logging.getLogger("pytubefix").setLevel(logging.WARNING)
         return func(*args, **kwargs)
 
     return wrapper
