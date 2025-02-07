@@ -391,6 +391,8 @@ class YouTubeVideo(MediaContent):
             return self._parse_srt("en")
         if "en-US" in self.pytube_object.captions:
             return self._parse_srt("en-US")
+        if "en-GB" in self.pytube_object.captions:
+            return self._parse_srt("en-GB")
         return None
 
     @property
