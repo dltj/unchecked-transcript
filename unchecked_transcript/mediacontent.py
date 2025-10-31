@@ -262,9 +262,6 @@ class YouTubeVideo(MediaContent):
         self.youtube_id = extract_video_id(self.source_url)
         self.pytube_object = pytubefix.YouTube(
             source_url,
-            client="WEB",
-            use_po_token=True,
-            po_token_verifier=_generate_youtube_tokens,
         )
         self._title = title
         self._creator = creator
@@ -418,7 +415,5 @@ class YouTubeVideo(MediaContent):
 
     def _get_audio_stream(self) -> pytubefix.streams.Stream:
         if self._audio_stream is None:
-            self._audio_stream = self.pytube_object.streams.filter(
-                mime_type="audio/mp4"
-            ).first()
+            self._audio_stream = self.pytube_object.streams.get_audio_only()
         return self._audio_stream

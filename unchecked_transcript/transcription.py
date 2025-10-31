@@ -27,7 +27,7 @@ class Transcription:
         if self._result is None:
             model = whisper.load_model("base")
             self._result = model.transcribe(
-                self._media_content.audio_file, language="en"
+                self._media_content.audio_file, language="en", fp16=False
             )
         return self._result
 
